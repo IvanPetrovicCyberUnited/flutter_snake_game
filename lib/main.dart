@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const CyberSnakeApp());
@@ -32,13 +34,14 @@ class SnakeGamePage extends StatefulWidget {
 
 class _SnakeGamePageState extends State<SnakeGamePage>
     with SingleTickerProviderStateMixin {
+  final FocusNode _focusNode = FocusNode();
   late final Ticker _ticker;
   Duration _lastElapsed = Duration.zero;
   double _accumulator = 0;
 
   static const int rows = 20;
   static const int cols = 20;
-  static const double stepTime = 200; // ms per movement
+  static const double stepTime = 200;
   static const int maxLength = 100;
 
   final Random _rand = Random();
@@ -57,6 +60,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
     super.initState();
     _placeFood();
     _ticker = createTicker(_onTick)..start();
+    _focusNode.requestFocus();
   }
 
   void _onTick(Duration elapsed) {
@@ -89,16 +93,20 @@ class _SnakeGamePageState extends State<SnakeGamePage>
         newHead = Point(head.x + 1, head.y);
         break;
     }
-    // Wall collision
-    if (newHead.x < 0 || newHead.y < 0 || newHead.x >= cols || newHead.y >= rows) {
+
+    if (newHead.x < 0 ||
+        newHead.y < 0 ||
+        newHead.x >= cols ||
+        newHead.y >= rows) {
       gameOver = true;
       return;
     }
-    // Self collision
+
     final index = snake.indexOf(newHead);
     if (index != -1) {
       snake = snake.sublist(0, index);
     }
+
     snake.insert(0, newHead);
 
     if (newHead == food) {
@@ -108,6 +116,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
       growBy += 5;
       frog = null;
     }
+
     if (growBy > 0) {
       growBy -= 1;
     } else {
@@ -115,6 +124,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
         snake.removeLast();
       }
     }
+
     if (snake.length >= maxLength) {
       victory = true;
     }
@@ -146,7 +156,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
         (direction == Direction.down && newDir == Direction.up) ||
         (direction == Direction.left && newDir == Direction.right) ||
         (direction == Direction.right && newDir == Direction.left)) {
-      return; // cannot reverse directly
+      return;
     }
     direction = newDir;
   }
@@ -154,6 +164,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   @override
   void dispose() {
     _ticker.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -161,27 +172,35 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: RawKeyboardListener(
+        focusNode: _focusNode,
         autofocus: true,
-        focusNode: FocusNode(),
         onKey: (event) {
           if (event is RawKeyDownEvent) {
-            switch (event.logicalKey.keyId) {
-              case 0x100070052: // Arrow up
-              case 0x100000057: // Key W
+            final key = event.logicalKey;
+
+            switch (key.keyLabel.toLowerCase()) {
+              case 'w':
                 _changeDirection(Direction.up);
                 break;
-              case 0x100070051: // Arrow down
-              case 0x100000053: // Key S
+              case 's':
                 _changeDirection(Direction.down);
                 break;
-              case 0x100070050: // Arrow left
-              case 0x100000041: // Key A
+              case 'a':
                 _changeDirection(Direction.left);
                 break;
-              case 0x10007004f: // Arrow right
-              case 0x100000044: // Key D
+              case 'd':
                 _changeDirection(Direction.right);
                 break;
+            }
+
+            if (key == LogicalKeyboardKey.arrowUp) {
+              _changeDirection(Direction.up);
+            } else if (key == LogicalKeyboardKey.arrowDown) {
+              _changeDirection(Direction.down);
+            } else if (key == LogicalKeyboardKey.arrowLeft) {
+              _changeDirection(Direction.left);
+            } else if (key == LogicalKeyboardKey.arrowRight) {
+              _changeDirection(Direction.right);
             }
           }
         },
@@ -202,14 +221,15 @@ class _SnakeGamePageState extends State<SnakeGamePage>
               }
             }
           },
-          child: CustomPaint(
-            painter: _SnakePainter(
-              snake: snake,
-              food: food,
-              frog: frog,
-              frogColor: frogColor,
+          child: SizedBox.expand(
+            child: CustomPaint(
+              painter: _SnakePainter(
+                snake: snake,
+                food: food,
+                frog: frog,
+                frogColor: frogColor,
+              ),
             ),
-            child: Container(),
           ),
         ),
       ),
@@ -235,6 +255,7 @@ class _SnakePainter extends CustomPainter {
     final cellWidth = size.width / _SnakeGamePageState.cols;
     final cellHeight = size.height / _SnakeGamePageState.rows;
     final paint = Paint()..color = Colors.greenAccent;
+
     for (var point in snake) {
       final rect = Rect.fromLTWH(
         point.x * cellWidth,
@@ -244,6 +265,7 @@ class _SnakePainter extends CustomPainter {
       );
       canvas.drawRect(rect.deflate(1), paint);
     }
+
     final foodRect = Rect.fromLTWH(
       food.x * cellWidth,
       food.y * cellHeight,
@@ -251,6 +273,7 @@ class _SnakePainter extends CustomPainter {
       cellHeight,
     );
     canvas.drawRect(foodRect.deflate(1), Paint()..color = Colors.redAccent);
+
     if (frog != null) {
       final frogRect = Rect.fromLTWH(
         frog!.x * cellWidth,

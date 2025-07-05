@@ -21,3 +21,10 @@ flutter build web --web-renderer canvaskit
 ```
 
 The generated build can be found in `build/web`.
+
+
+flutter clean
+flutter pub get
+flutter build web
+flutter run -d chrome
+
