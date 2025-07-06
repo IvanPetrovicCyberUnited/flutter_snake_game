@@ -5,7 +5,7 @@ A simple cyber-themed Snake game built with Flutter. The game targets both mobil
 ## Features
 - Smoothly animated snake movement using `CustomPaint`.
 - Special frog item spawns every 10 seconds and grows the snake by five segments with a random color.
-- Self-collision trims the snake instead of ending the game.
+- Self-collision trims the snake instead of ending the game and deducts points equal to the bitten segments.
 - Wall collisions end the game.
 - Win when the snake reaches a length of 100 segments.
 
