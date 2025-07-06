@@ -3,7 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dpad.dart';
+import 'direction.dart';
 
 void main() {
   runApp(const CyberSnakeApp());
@@ -59,6 +62,10 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   bool paused = false;
   bool _directionChangedThisTick = false;
   DateTime _lastFrog = DateTime.now();
+  bool get _isMobile =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   @override
   void initState() {
@@ -322,6 +329,18 @@ class _SnakeGamePageState extends State<SnakeGamePage>
                 color: Colors.indigoAccent,
               ),
             ),
+          if (_isMobile)
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: RetroDPad(
+                onDirection: (dir) {
+                  setState(() {
+                    _changeDirection(dir);
+                  });
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -380,7 +399,6 @@ class _SnakePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-enum Direction { up, down, left, right }
 
 class _BlinkingText extends StatefulWidget {
   final String text;
