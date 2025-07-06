@@ -113,7 +113,11 @@ class _SnakeGamePageState extends State<SnakeGamePage>
 
     if (snake.contains(newHead)) {
       _audioPlayer.play(AssetSource('sounds/beep_low.wav'));
-      gameOver = true;
+      final collisionIndex = snake.indexOf(newHead);
+      snake.insert(0, newHead);
+      final bittenOff = snake.length - (collisionIndex + 1);
+      snake = snake.sublist(0, collisionIndex + 1);
+      currentScore = max(0, currentScore - bittenOff);
       return;
     }
 
