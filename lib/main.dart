@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   runApp(const CyberSnakeApp());
@@ -36,6 +37,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
     with SingleTickerProviderStateMixin {
   final FocusNode _focusNode = FocusNode();
   late final Ticker _ticker;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   Duration _lastElapsed = Duration.zero;
   double _accumulator = 0;
 
@@ -50,9 +52,12 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   Point<int>? frog;
   Color frogColor = Colors.green;
   int growBy = 0;
+  int currentScore = 0;
   Direction direction = Direction.right;
   bool gameOver = false;
   bool victory = false;
+  bool paused = false;
+  bool _directionChangedThisTick = false;
   DateTime _lastFrog = DateTime.now();
 
   @override
@@ -69,7 +74,10 @@ class _SnakeGamePageState extends State<SnakeGamePage>
     _accumulator += dt.inMilliseconds;
     if (_accumulator >= stepTime) {
       _accumulator -= stepTime;
-      _update();
+      if (!paused) {
+        _update();
+        _directionChangedThisTick = false;
+      }
     }
     setState(() {});
   }
@@ -98,34 +106,38 @@ class _SnakeGamePageState extends State<SnakeGamePage>
         newHead.y < 0 ||
         newHead.x >= cols ||
         newHead.y >= rows) {
+      _audioPlayer.play(AssetSource('beep_high.wav'));
       gameOver = true;
       return;
     }
 
-    final index = snake.indexOf(newHead);
-    if (index != -1) {
-      snake = snake.sublist(0, index);
+    if (snake.contains(newHead)) {
+      _audioPlayer.play(AssetSource('sounds/beep_low.wav'));
+      gameOver = true;
+      return;
     }
 
     snake.insert(0, newHead);
 
     if (newHead == food) {
       growBy += 1;
+      currentScore += 1;
+      _audioPlayer.play(AssetSource('sounds/beep.wav'));
       _placeFood();
     } else if (frog != null && newHead == frog) {
       growBy += 5;
+      currentScore += 5;
+      _audioPlayer.play(AssetSource('sounds/beep.wav'));
       frog = null;
     }
 
     if (growBy > 0) {
       growBy -= 1;
     } else {
-      if (snake.length > 1) {
-        snake.removeLast();
-      }
+      snake.removeLast();
     }
 
-    if (snake.length >= maxLength) {
+    if (currentScore >= maxLength) {
       victory = true;
     }
   }
@@ -152,86 +164,161 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   }
 
   void _changeDirection(Direction newDir) {
+    if (_directionChangedThisTick) return;
+
     if ((direction == Direction.up && newDir == Direction.down) ||
         (direction == Direction.down && newDir == Direction.up) ||
         (direction == Direction.left && newDir == Direction.right) ||
         (direction == Direction.right && newDir == Direction.left)) {
       return;
     }
+
     direction = newDir;
+    _directionChangedThisTick = true;
   }
 
   @override
   void dispose() {
     _ticker.dispose();
     _focusNode.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RawKeyboardListener(
-        focusNode: _focusNode,
-        autofocus: true,
-        onKey: (event) {
-          if (event is RawKeyDownEvent) {
-            final key = event.logicalKey;
+      body: Stack(
+        children: [
+          RawKeyboardListener(
+            focusNode: _focusNode,
+            autofocus: true,
+            onKey: (event) {
+              if (event is RawKeyDownEvent) {
+                final key = event.logicalKey;
 
-            switch (key.keyLabel.toLowerCase()) {
-              case 'w':
-                _changeDirection(Direction.up);
-                break;
-              case 's':
-                _changeDirection(Direction.down);
-                break;
-              case 'a':
-                _changeDirection(Direction.left);
-                break;
-              case 'd':
-                _changeDirection(Direction.right);
-                break;
-            }
+                if (key == LogicalKeyboardKey.enter) {
+                  setState(() {
+                    paused = !paused;
+                  });
+                  return;
+                }
 
-            if (key == LogicalKeyboardKey.arrowUp) {
-              _changeDirection(Direction.up);
-            } else if (key == LogicalKeyboardKey.arrowDown) {
-              _changeDirection(Direction.down);
-            } else if (key == LogicalKeyboardKey.arrowLeft) {
-              _changeDirection(Direction.left);
-            } else if (key == LogicalKeyboardKey.arrowRight) {
-              _changeDirection(Direction.right);
-            }
-          }
-        },
-        child: GestureDetector(
-          onPanUpdate: (details) {
-            final delta = details.delta;
-            if (delta.dx.abs() > delta.dy.abs()) {
-              if (delta.dx > 0) {
-                _changeDirection(Direction.right);
-              } else {
-                _changeDirection(Direction.left);
+                if (!paused) {
+                  switch (key.keyLabel.toLowerCase()) {
+                    case 'w':
+                      _changeDirection(Direction.up);
+                      break;
+                    case 's':
+                      _changeDirection(Direction.down);
+                      break;
+                    case 'a':
+                      _changeDirection(Direction.left);
+                      break;
+                    case 'd':
+                      _changeDirection(Direction.right);
+                      break;
+                  }
+
+                  if (key == LogicalKeyboardKey.arrowUp) {
+                    _changeDirection(Direction.up);
+                  } else if (key == LogicalKeyboardKey.arrowDown) {
+                    _changeDirection(Direction.down);
+                  } else if (key == LogicalKeyboardKey.arrowLeft) {
+                    _changeDirection(Direction.left);
+                  } else if (key == LogicalKeyboardKey.arrowRight) {
+                    _changeDirection(Direction.right);
+                  }
+                }
               }
-            } else {
-              if (delta.dy > 0) {
-                _changeDirection(Direction.down);
-              } else {
-                _changeDirection(Direction.up);
-              }
-            }
-          },
-          child: SizedBox.expand(
-            child: CustomPaint(
-              painter: _SnakePainter(
-                snake: snake,
-                food: food,
-                frog: frog,
-                frogColor: frogColor,
+            },
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                if (paused) return;
+                final delta = details.delta;
+                if (delta.dx.abs() > delta.dy.abs()) {
+                  if (delta.dx > 0) {
+                    _changeDirection(Direction.right);
+                  } else {
+                    _changeDirection(Direction.left);
+                  }
+                } else {
+                  if (delta.dy > 0) {
+                    _changeDirection(Direction.down);
+                  } else {
+                    _changeDirection(Direction.up);
+                  }
+                }
+              },
+              child: SizedBox.expand(
+                child: CustomPaint(
+                  painter: _SnakePainter(
+                    snake: snake,
+                    food: food,
+                    frog: frog,
+                    frogColor: frogColor,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          Positioned(
+            top: 16,
+            left: 16,
+            child: Text(
+              'Score: $currentScore',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          if (paused)
+            const Center(
+              child: Text(
+                'PAUSED',
+                style: TextStyle(
+                  color: Colors.yellow,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          if (gameOver)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'GAME OVER',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Refresh the page to play again',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (victory)
+            const _BlinkingText(
+              text: 'YOU WIN!',
+              textStyle: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: Colors.indigoAccent,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -290,3 +377,47 @@ class _SnakePainter extends CustomPainter {
 }
 
 enum Direction { up, down, left, right }
+
+class _BlinkingText extends StatefulWidget {
+  final String text;
+  final TextStyle textStyle;
+
+  const _BlinkingText({
+    required this.text,
+    required this.textStyle,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_BlinkingText> createState() => _BlinkingTextState();
+}
+
+class _BlinkingTextState extends State<_BlinkingText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _controller,
+      child: Center(
+        child: Text(widget.text, style: widget.textStyle),
+      ),
+    );
+  }
+}
