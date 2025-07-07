@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'direction.dart';
 
 class RetroDPad extends StatelessWidget {
@@ -12,10 +11,13 @@ class RetroDPad extends StatelessWidget {
       onTap: () => onDirection(dir),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey.shade800,
-          border: Border.all(color: Colors.white, width: 2),
+          color: Colors.grey.shade700.withOpacity(0.9),
+          shape: BoxShape.rectangle,
+          border: Border.all(color: Colors.white70, width: 2),
         ),
-        child: Icon(icon, color: Colors.white),
+        child: Center(
+          child: Icon(icon, color: Colors.white, size: 28),
+        ),
       ),
     );
   }
@@ -23,37 +25,37 @@ class RetroDPad extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 150,
-      height: 150,
+      width: 160,
+      height: 160,
       child: Stack(
         children: [
           Positioned(
             top: 0,
-            left: 50,
-            right: 50,
+            left: 55,
+            right: 55,
             height: 50,
-            child: _buildButton(Icons.arrow_drop_up, Direction.up),
+            child: _buildButton(Icons.keyboard_arrow_up, Direction.up),
           ),
           Positioned(
             bottom: 0,
-            left: 50,
-            right: 50,
+            left: 55,
+            right: 55,
             height: 50,
-            child: _buildButton(Icons.arrow_drop_down, Direction.down),
+            child: _buildButton(Icons.keyboard_arrow_down, Direction.down),
           ),
           Positioned(
             left: 0,
-            top: 50,
-            bottom: 50,
+            top: 55,
+            bottom: 55,
             width: 50,
-            child: _buildButton(Icons.arrow_left, Direction.left),
+            child: _buildButton(Icons.keyboard_arrow_left, Direction.left),
           ),
           Positioned(
             right: 0,
-            top: 50,
-            bottom: 50,
+            top: 55,
+            bottom: 55,
             width: 50,
-            child: _buildButton(Icons.arrow_right, Direction.right),
+            child: _buildButton(Icons.keyboard_arrow_right, Direction.right),
           ),
         ],
       ),

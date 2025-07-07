@@ -62,10 +62,12 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   bool paused = false;
   bool _directionChangedThisTick = false;
   DateTime _lastFrog = DateTime.now();
+
+  // ✅ angepasst für Android + Web
   bool get _isMobile =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS);
+      kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   void initState() {
@@ -398,7 +400,6 @@ class _SnakePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-
 
 class _BlinkingText extends StatefulWidget {
   final String text;
