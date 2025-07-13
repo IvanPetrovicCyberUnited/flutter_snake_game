@@ -206,12 +206,153 @@ class _SnakeGamePageState extends State<SnakeGamePage>
 
   @override
   Widget build(BuildContext context) {
+    // --- MENU LAYOUT REFACTOR ---
+    // D-pad size (should match dpad.dart default for mobile)
+    final double dpadSize = _isMobile ? 180 : 0;
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
+          // Menu Row
+          Container(
+            color: Colors.grey[900],
+            constraints: BoxConstraints(minHeight: dpadSize),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left: Pause & Play Again
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isMobile)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: ElevatedButton.icon(
+                          icon: Icon(paused ? Icons.play_arrow : Icons.pause),
+                          label: Text(paused ? 'Resume' : 'Pause'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow,
+                            foregroundColor: Colors.black,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              paused = !paused;
+                            });
+                          },
+                        ),
+                      ),
+                    if (gameOver)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Play Again'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.tealAccent,
+                            foregroundColor: Colors.black,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            if (kIsWeb) {
+                              html.window.location.reload();
+                            } else {
+                              // For mobile/desktop, just restart the app state
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+                // Center: Title, Score, Sound
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Cyber Snake',
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.tealAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Score: $currentScore',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              soundOn ? Icons.volume_up : Icons.volume_off,
+                              color: Colors.tealAccent,
+                            ),
+                            tooltip: soundOn ? 'Mute' : 'Unmute',
+                            onPressed: () {
+                              setState(() {
+                                soundOn = !soundOn;
+                              });
+                            },
+                          ),
+                          Text(
+                            soundOn ? 'Sound On' : 'Muted',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                      if (victory)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'You Win!\nRefresh to play again.',
+                            style: TextStyle(
+                                color: Colors.indigoAccent, fontSize: 16),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      if (paused && !gameOver && !victory)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Paused',
+                            style:
+                                TextStyle(color: Colors.yellow, fontSize: 16),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Right: D-pad
+                if (_isMobile)
+                  SizedBox(
+                    width: dpadSize,
+                    height: dpadSize,
+                    child: RetroDPad(
+                      onDirection: (dir) {
+                        setState(() {
+                          _changeDirection(dir);
+                        });
+                      },
+                      size: dpadSize,
+                    ),
+                  ),
+              ],
+            ),
+          ),
           // Game Area
           Expanded(
-            flex: 3,
             child: Container(
               color: Colors.black,
               child: Stack(
@@ -340,162 +481,48 @@ class _SnakeGamePageState extends State<SnakeGamePage>
                         color: Colors.indigoAccent,
                       ),
                     ),
+                  // Controls info (desktop)
+                  if (!_isMobile)
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: const [
+                          Text(
+                            'Controls:',
+                            style: TextStyle(
+                              color: Colors.tealAccent,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Use arrow keys to move',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Press Enter to pause the game',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  // Footer
+                  Positioned(
+                    left: 16,
+                    bottom: 8,
+                    child: const Text(
+                      'Made with Flutter',
+                      style: TextStyle(color: Colors.white24, fontSize: 12),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-          // Menu Area
-          Container(
-            width: 260,
-            color: Colors.grey[900],
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cyber Snake',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.tealAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 24),
-                // Score display
-                Text(
-                  'Score: $currentScore',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Virtual D-pad for mobile
-                if (_isMobile)
-                  Column(
-                    children: [
-                      RetroDPad(
-                        onDirection: (dir) {
-                          setState(() {
-                            _changeDirection(dir);
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                // Sound toggle button
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        soundOn ? Icons.volume_up : Icons.volume_off,
-                        color: Colors.tealAccent,
-                      ),
-                      tooltip: soundOn ? 'Mute' : 'Unmute',
-                      onPressed: () {
-                        setState(() {
-                          soundOn = !soundOn;
-                        });
-                      },
-                    ),
-                    Text(
-                      soundOn ? 'Sound On' : 'Muted',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Controls info
-                const Text(
-                  'Controls:',
-                  style: TextStyle(
-                    color: Colors.tealAccent,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (_isMobile)
-                  const Text(
-                    'Use D-pad to move',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  )
-                else ...[
-                  const Text(
-                    'Use arrow keys to move',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  SizedBox(height: 4),
-                  const Text(
-                    'Press Enter to pause the game',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ],
-                // Pause button for mobile only (move above controls for visibility)
-                if (_isMobile)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: Icon(paused ? Icons.play_arrow : Icons.pause),
-                        label: Text(paused ? 'Resume' : 'Pause'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.yellow,
-                          foregroundColor: Colors.black,
-                          textStyle:
-                              const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            paused = !paused;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 24),
-                // Play Again button (only when game over)
-                if (gameOver)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Play Again'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.tealAccent,
-                        foregroundColor: Colors.black,
-                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: () {
-                        // Refresh the page (web only)
-                        if (kIsWeb) {
-                          html.window.location.reload();
-                        } else {
-                          // For mobile/desktop, just restart the app state
-                          // (Optional: could use a callback or setState to reset)
-                          // For now, do nothing
-                        }
-                      },
-                    ),
-                  ),
-                if (victory)
-                  const Text(
-                    'You Win!\nRefresh to play again.',
-                    style: TextStyle(color: Colors.indigoAccent, fontSize: 16),
-                  ),
-                if (paused && !gameOver && !victory)
-                  const Text(
-                    'Paused',
-                    style: TextStyle(color: Colors.yellow, fontSize: 16),
-                  ),
-                const Spacer(),
-                const Text(
-                  'Made with Flutter',
-                  style: TextStyle(color: Colors.white24, fontSize: 12),
-                ),
-              ],
             ),
           ),
         ],
