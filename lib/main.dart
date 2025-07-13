@@ -211,327 +211,348 @@ class _SnakeGamePageState extends State<SnakeGamePage>
     // --- MENU LAYOUT REFACTOR ---
     // D-pad size (should match dpad.dart default for mobile)
     final double dpadSize = _isMobile ? 180 : 0;
+    final double menuFraction = 0.25;
     return Scaffold(
-      body: Column(
-        children: [
-          // Game Area
-          Expanded(
-            child: Container(
-              color: Colors.black,
-              child: Stack(
-                children: [
-                  RawKeyboardListener(
-                    focusNode: _focusNode,
-                    autofocus: true,
-                    onKey: (event) {
-                      if (event is RawKeyDownEvent) {
-                        final key = event.logicalKey;
-                        if (key == LogicalKeyboardKey.enter) {
-                          setState(() {
-                            paused = !paused;
-                          });
-                          return;
-                        }
-                        if (!paused) {
-                          switch (key.keyLabel.toLowerCase()) {
-                            case 'w':
-                              _changeDirection(Direction.up);
-                              break;
-                            case 's':
-                              _changeDirection(Direction.down);
-                              break;
-                            case 'a':
-                              _changeDirection(Direction.left);
-                              break;
-                            case 'd':
-                              _changeDirection(Direction.right);
-                              break;
-                          }
-                          if (key == LogicalKeyboardKey.arrowUp) {
-                            _changeDirection(Direction.up);
-                          } else if (key == LogicalKeyboardKey.arrowDown) {
-                            _changeDirection(Direction.down);
-                          } else if (key == LogicalKeyboardKey.arrowLeft) {
-                            _changeDirection(Direction.left);
-                          } else if (key == LogicalKeyboardKey.arrowRight) {
-                            _changeDirection(Direction.right);
-                          }
-                        }
-                      }
-                    },
-                    child: _isMobile
-                        ? SizedBox.expand(
-                            child: CustomPaint(
-                              painter: SnakePainter(
-                                snake: snake,
-                                food: food,
-                                frog: frog,
-                                frogColor: frogColor,
-                                cols: cols,
-                                rows: rows,
-                              ),
-                            ),
-                          )
-                        : GestureDetector(
-                            onPanUpdate: (details) {
-                              if (paused) return;
-                              final delta = details.delta;
-                              if (delta.dx.abs() > delta.dy.abs()) {
-                                if (delta.dx > 0) {
-                                  _changeDirection(Direction.right);
-                                } else {
-                                  _changeDirection(Direction.left);
-                                }
-                              } else {
-                                if (delta.dy > 0) {
-                                  _changeDirection(Direction.down);
-                                } else {
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double totalHeight = constraints.maxHeight;
+          final double menuAreaHeight = _isMobile
+              ? (totalHeight * menuFraction < dpadSize
+                  ? dpadSize
+                  : totalHeight * menuFraction)
+              : totalHeight * menuFraction;
+          final double gameAreaHeight = totalHeight - menuAreaHeight;
+          return Column(
+            children: [
+              // Game Area (75%)
+              SizedBox(
+                height: gameAreaHeight,
+                child: Container(
+                  color: Colors.black,
+                  child: Stack(
+                    children: [
+                      RawKeyboardListener(
+                        focusNode: _focusNode,
+                        autofocus: true,
+                        onKey: (event) {
+                          if (event is RawKeyDownEvent) {
+                            final key = event.logicalKey;
+                            if (key == LogicalKeyboardKey.enter) {
+                              setState(() {
+                                paused = !paused;
+                              });
+                              return;
+                            }
+                            if (!paused) {
+                              switch (key.keyLabel.toLowerCase()) {
+                                case 'w':
                                   _changeDirection(Direction.up);
-                                }
+                                  break;
+                                case 's':
+                                  _changeDirection(Direction.down);
+                                  break;
+                                case 'a':
+                                  _changeDirection(Direction.left);
+                                  break;
+                                case 'd':
+                                  _changeDirection(Direction.right);
+                                  break;
                               }
-                            },
-                            child: SizedBox.expand(
-                              child: CustomPaint(
-                                painter: SnakePainter(
-                                  snake: snake,
-                                  food: food,
-                                  frog: frog,
-                                  frogColor: frogColor,
-                                  cols: cols,
-                                  rows: rows,
+                              if (key == LogicalKeyboardKey.arrowUp) {
+                                _changeDirection(Direction.up);
+                              } else if (key == LogicalKeyboardKey.arrowDown) {
+                                _changeDirection(Direction.down);
+                              } else if (key == LogicalKeyboardKey.arrowLeft) {
+                                _changeDirection(Direction.left);
+                              } else if (key == LogicalKeyboardKey.arrowRight) {
+                                _changeDirection(Direction.right);
+                              }
+                            }
+                          }
+                        },
+                        child: _isMobile
+                            ? SizedBox.expand(
+                                child: CustomPaint(
+                                  painter: SnakePainter(
+                                    snake: snake,
+                                    food: food,
+                                    frog: frog,
+                                    frogColor: frogColor,
+                                    cols: cols,
+                                    rows: rows,
+                                  ),
+                                ),
+                              )
+                            : GestureDetector(
+                                onPanUpdate: (details) {
+                                  if (paused) return;
+                                  final delta = details.delta;
+                                  if (delta.dx.abs() > delta.dy.abs()) {
+                                    if (delta.dx > 0) {
+                                      _changeDirection(Direction.right);
+                                    } else {
+                                      _changeDirection(Direction.left);
+                                    }
+                                  } else {
+                                    if (delta.dy > 0) {
+                                      _changeDirection(Direction.down);
+                                    } else {
+                                      _changeDirection(Direction.up);
+                                    }
+                                  }
+                                },
+                                child: SizedBox.expand(
+                                  child: CustomPaint(
+                                    painter: SnakePainter(
+                                      snake: snake,
+                                      food: food,
+                                      frog: frog,
+                                      frogColor: frogColor,
+                                      cols: cols,
+                                      rows: rows,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                  ),
-                  if (paused)
-                    const Center(
-                      child: Text(
-                        'PAUSED',
-                        style: TextStyle(
-                          color: Colors.yellow,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                        ),
                       ),
-                    ),
-                  if (gameOver)
-                    Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Text(
-                            'GAME OVER',
+                      if (paused)
+                        const Center(
+                          child: Text(
+                            'PAUSED',
                             style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 40,
+                              color: Colors.yellow,
+                              fontSize: 36,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Refresh the page to play again',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (victory)
-                    const BlinkingText(
-                      text: 'YOU WIN!',
-                      textStyle: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigoAccent,
-                      ),
-                    ),
-                  // Controls info (desktop)
-                  if (!_isMobile)
-                    Positioned(
-                      right: 16,
-                      bottom: 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: const [
-                          Text(
-                            'Controls:',
-                            style: TextStyle(
-                              color: Colors.tealAccent,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Use arrow keys to move',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 14),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Press Enter to pause the game',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  // Footer
-                  Positioned(
-                    left: 16,
-                    bottom: 8,
-                    child: const Text(
-                      'Made with Flutter',
-                      style: TextStyle(color: Colors.white24, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Menu Row (moved to bottom)
-          Container(
-            color: Colors.grey[900],
-            constraints: BoxConstraints(minHeight: dpadSize),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left: Pause & Play Again
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isMobile)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: ElevatedButton.icon(
-                          icon: Icon(paused ? Icons.play_arrow : Icons.pause),
-                          label: Text(paused ? 'Resume' : 'Pause'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.yellow,
-                            foregroundColor: Colors.black,
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              paused = !paused;
-                            });
-                          },
                         ),
-                      ),
-                    if (gameOver)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Play Again'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.tealAccent,
-                            foregroundColor: Colors.black,
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () {
-                            if (kIsWeb) {
-                              html.window.location.reload();
-                            } else {
-                              // For mobile/desktop, just restart the app state
-                            }
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-                // Center: Title, Score, Sound
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Cyber Snake',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.tealAccent,
+                      if (gameOver)
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text(
+                                'GAME OVER',
+                                style: TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 40,
                                   fontWeight: FontWeight.bold,
                                 ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Score: $currentScore',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'Refresh the page to play again',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (victory)
+                        const BlinkingText(
+                          text: 'YOU WIN!',
+                          textStyle: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigoAccent,
+                          ),
+                        ),
+                      // Controls info (desktop)
+                      if (!_isMobile)
+                        Positioned(
+                          right: 16,
+                          bottom: 16,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: const [
+                              Text(
+                                'Controls:',
+                                style: TextStyle(
+                                  color: Colors.tealAccent,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Use arrow keys to move',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Press Enter to pause the game',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // Footer
+                      Positioned(
+                        left: 16,
+                        bottom: 8,
+                        child: const Text(
+                          'Made with Flutter',
+                          style: TextStyle(color: Colors.white24, fontSize: 12),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    ],
+                  ),
+                ),
+              ),
+              // Menu Row (25%)
+              SizedBox(
+                height: menuAreaHeight,
+                child: Container(
+                  color: Colors.grey[900],
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Left: Pause & Play Again
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: Icon(
-                              soundOn ? Icons.volume_up : Icons.volume_off,
-                              color: Colors.tealAccent,
+                          if (_isMobile)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: ElevatedButton.icon(
+                                icon: Icon(
+                                    paused ? Icons.play_arrow : Icons.pause),
+                                label: Text(paused ? 'Resume' : 'Pause'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.yellow,
+                                  foregroundColor: Colors.black,
+                                  textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    paused = !paused;
+                                  });
+                                },
+                              ),
                             ),
-                            tooltip: soundOn ? 'Mute' : 'Unmute',
-                            onPressed: () {
-                              setState(() {
-                                soundOn = !soundOn;
-                              });
-                            },
-                          ),
-                          Text(
-                            soundOn ? 'Sound On' : 'Muted',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
+                          if (gameOver)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Play Again'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.tealAccent,
+                                  foregroundColor: Colors.black,
+                                  textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () {
+                                  if (kIsWeb) {
+                                    html.window.location.reload();
+                                  } else {
+                                    // For mobile/desktop, just restart the app state
+                                  }
+                                },
+                              ),
+                            ),
                         ],
                       ),
-                      if (victory)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'You Win!\nRefresh to play again.',
-                            style: TextStyle(
-                                color: Colors.indigoAccent, fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
+                      // Center: Title, Score, Sound
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Cyber Snake',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    color: Colors.tealAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Score: $currentScore',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    soundOn
+                                        ? Icons.volume_up
+                                        : Icons.volume_off,
+                                    color: Colors.tealAccent,
+                                  ),
+                                  tooltip: soundOn ? 'Mute' : 'Unmute',
+                                  onPressed: () {
+                                    setState(() {
+                                      soundOn = !soundOn;
+                                    });
+                                  },
+                                ),
+                                Text(
+                                  soundOn ? 'Sound On' : 'Muted',
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                            if (victory)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  'You Win!\nRefresh to play again.',
+                                  style: TextStyle(
+                                      color: Colors.indigoAccent, fontSize: 16),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            if (paused && !gameOver && !victory)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  'Paused',
+                                  style: TextStyle(
+                                      color: Colors.yellow, fontSize: 16),
+                                ),
+                              ),
+                          ],
                         ),
-                      if (paused && !gameOver && !victory)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'Paused',
-                            style:
-                                TextStyle(color: Colors.yellow, fontSize: 16),
+                      ),
+                      // Right: D-pad
+                      if (_isMobile)
+                        SizedBox(
+                          width: dpadSize,
+                          height: dpadSize,
+                          child: RetroDPad(
+                            onDirection: (dir) {
+                              setState(() {
+                                _changeDirection(dir);
+                              });
+                            },
+                            size: dpadSize,
                           ),
                         ),
                     ],
                   ),
                 ),
-                // Right: D-pad
-                if (_isMobile)
-                  SizedBox(
-                    width: dpadSize,
-                    height: dpadSize,
-                    child: RetroDPad(
-                      onDirection: (dir) {
-                        setState(() {
-                          _changeDirection(dir);
-                        });
-                      },
-                      size: dpadSize,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
