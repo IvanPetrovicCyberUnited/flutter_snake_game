@@ -1,12 +1,17 @@
-import 'dart:async';
+// ignore: avoid_web_libraries_in_flutter
+// Only import dart:html for web
+// ignore: uri_does_not_exist
+import 'dart:html' as html;
 import 'dart:math';
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'dpad.dart';
+import 'package:flutter/services.dart' show RawKeyDownEvent, LogicalKeyboardKey;
+
 import 'direction.dart';
+import 'dpad.dart';
 
 void main() {
   runApp(const CyberSnakeApp());
@@ -38,6 +43,7 @@ class SnakeGamePage extends StatefulWidget {
 
 class _SnakeGamePageState extends State<SnakeGamePage>
     with SingleTickerProviderStateMixin {
+  bool soundOn = true;
   final FocusNode _focusNode = FocusNode();
   late final Ticker _ticker;
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -115,13 +121,13 @@ class _SnakeGamePageState extends State<SnakeGamePage>
         newHead.y < 0 ||
         newHead.x >= cols ||
         newHead.y >= rows) {
-      _audioPlayer.play(AssetSource('beep_high.wav'));
+      if (soundOn) _audioPlayer.play(AssetSource('beep_high.wav'));
       gameOver = true;
       return;
     }
 
     if (snake.contains(newHead)) {
-      _audioPlayer.play(AssetSource('sounds/beep_low.wav'));
+      if (soundOn) _audioPlayer.play(AssetSource('sounds/beep_low.wav'));
       final collisionIndex = snake.indexOf(newHead);
       snake.insert(0, newHead);
       final bittenOff = snake.length - (collisionIndex + 1);
@@ -135,12 +141,12 @@ class _SnakeGamePageState extends State<SnakeGamePage>
     if (newHead == food) {
       growBy += 1;
       currentScore += 1;
-      _audioPlayer.play(AssetSource('sounds/beep.wav'));
+      if (soundOn) _audioPlayer.play(AssetSource('sounds/beep.wav'));
       _placeFood();
     } else if (frog != null && newHead == frog) {
       growBy += 5;
       currentScore += 5;
-      _audioPlayer.play(AssetSource('sounds/beep.wav'));
+      if (soundOn) _audioPlayer.play(AssetSource('sounds/beep.wav'));
       frog = null;
     }
 
@@ -201,148 +207,297 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body: Row(
         children: [
-          RawKeyboardListener(
-            focusNode: _focusNode,
-            autofocus: true,
-            onKey: (event) {
-              if (event is RawKeyDownEvent) {
-                final key = event.logicalKey;
-
-                if (key == LogicalKeyboardKey.enter) {
-                  setState(() {
-                    paused = !paused;
-                  });
-                  return;
-                }
-
-                if (!paused) {
-                  switch (key.keyLabel.toLowerCase()) {
-                    case 'w':
-                      _changeDirection(Direction.up);
-                      break;
-                    case 's':
-                      _changeDirection(Direction.down);
-                      break;
-                    case 'a':
-                      _changeDirection(Direction.left);
-                      break;
-                    case 'd':
-                      _changeDirection(Direction.right);
-                      break;
-                  }
-
-                  if (key == LogicalKeyboardKey.arrowUp) {
-                    _changeDirection(Direction.up);
-                  } else if (key == LogicalKeyboardKey.arrowDown) {
-                    _changeDirection(Direction.down);
-                  } else if (key == LogicalKeyboardKey.arrowLeft) {
-                    _changeDirection(Direction.left);
-                  } else if (key == LogicalKeyboardKey.arrowRight) {
-                    _changeDirection(Direction.right);
-                  }
-                }
-              }
-            },
-            child: GestureDetector(
-              onPanUpdate: (details) {
-                if (paused) return;
-                final delta = details.delta;
-                if (delta.dx.abs() > delta.dy.abs()) {
-                  if (delta.dx > 0) {
-                    _changeDirection(Direction.right);
-                  } else {
-                    _changeDirection(Direction.left);
-                  }
-                } else {
-                  if (delta.dy > 0) {
-                    _changeDirection(Direction.down);
-                  } else {
-                    _changeDirection(Direction.up);
-                  }
-                }
-              },
-              child: SizedBox.expand(
-                child: CustomPaint(
-                  painter: _SnakePainter(
-                    snake: snake,
-                    food: food,
-                    frog: frog,
-                    frogColor: frogColor,
+          // Game Area
+          Expanded(
+            flex: 3,
+            child: Container(
+              color: Colors.black,
+              child: Stack(
+                children: [
+                  RawKeyboardListener(
+                    focusNode: _focusNode,
+                    autofocus: true,
+                    onKey: (event) {
+                      if (event is RawKeyDownEvent) {
+                        final key = event.logicalKey;
+                        if (key == LogicalKeyboardKey.enter) {
+                          setState(() {
+                            paused = !paused;
+                          });
+                          return;
+                        }
+                        if (!paused) {
+                          switch (key.keyLabel.toLowerCase()) {
+                            case 'w':
+                              _changeDirection(Direction.up);
+                              break;
+                            case 's':
+                              _changeDirection(Direction.down);
+                              break;
+                            case 'a':
+                              _changeDirection(Direction.left);
+                              break;
+                            case 'd':
+                              _changeDirection(Direction.right);
+                              break;
+                          }
+                          if (key == LogicalKeyboardKey.arrowUp) {
+                            _changeDirection(Direction.up);
+                          } else if (key == LogicalKeyboardKey.arrowDown) {
+                            _changeDirection(Direction.down);
+                          } else if (key == LogicalKeyboardKey.arrowLeft) {
+                            _changeDirection(Direction.left);
+                          } else if (key == LogicalKeyboardKey.arrowRight) {
+                            _changeDirection(Direction.right);
+                          }
+                        }
+                      }
+                    },
+                    child: _isMobile
+                        ? SizedBox.expand(
+                            child: CustomPaint(
+                              painter: _SnakePainter(
+                                snake: snake,
+                                food: food,
+                                frog: frog,
+                                frogColor: frogColor,
+                              ),
+                            ),
+                          )
+                        : GestureDetector(
+                            onPanUpdate: (details) {
+                              if (paused) return;
+                              final delta = details.delta;
+                              if (delta.dx.abs() > delta.dy.abs()) {
+                                if (delta.dx > 0) {
+                                  _changeDirection(Direction.right);
+                                } else {
+                                  _changeDirection(Direction.left);
+                                }
+                              } else {
+                                if (delta.dy > 0) {
+                                  _changeDirection(Direction.down);
+                                } else {
+                                  _changeDirection(Direction.up);
+                                }
+                              }
+                            },
+                            child: SizedBox.expand(
+                              child: CustomPaint(
+                                painter: _SnakePainter(
+                                  snake: snake,
+                                  food: food,
+                                  frog: frog,
+                                  frogColor: frogColor,
+                                ),
+                              ),
+                            ),
+                          ),
                   ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 16,
-            left: 16,
-            child: Text(
-              'Score: $currentScore',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          if (paused)
-            const Center(
-              child: Text(
-                'PAUSED',
-                style: TextStyle(
-                  color: Colors.yellow,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          if (gameOver)
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'GAME OVER',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
+                  if (paused)
+                    const Center(
+                      child: Text(
+                        'PAUSED',
+                        style: TextStyle(
+                          color: Colors.yellow,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Refresh the page to play again',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 18,
+                  if (gameOver)
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'GAME OVER',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Refresh the page to play again',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  if (victory)
+                    const _BlinkingText(
+                      text: 'YOU WIN!',
+                      textStyle: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigoAccent,
+                      ),
+                    ),
                 ],
               ),
             ),
-          if (victory)
-            const _BlinkingText(
-              text: 'YOU WIN!',
-              textStyle: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: Colors.indigoAccent,
-              ),
+          ),
+          // Menu Area
+          Container(
+            width: 260,
+            color: Colors.grey[900],
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cyber Snake',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.tealAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                // Score display
+                Text(
+                  'Score: $currentScore',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Virtual D-pad for mobile
+                if (_isMobile)
+                  Column(
+                    children: [
+                      RetroDPad(
+                        onDirection: (dir) {
+                          setState(() {
+                            _changeDirection(dir);
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                // Sound toggle button
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        soundOn ? Icons.volume_up : Icons.volume_off,
+                        color: Colors.tealAccent,
+                      ),
+                      tooltip: soundOn ? 'Mute' : 'Unmute',
+                      onPressed: () {
+                        setState(() {
+                          soundOn = !soundOn;
+                        });
+                      },
+                    ),
+                    Text(
+                      soundOn ? 'Sound On' : 'Muted',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Controls info
+                const Text(
+                  'Controls:',
+                  style: TextStyle(
+                    color: Colors.tealAccent,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_isMobile)
+                  const Text(
+                    'Use D-pad to move',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  )
+                else ...[
+                  const Text(
+                    'Use arrow keys to move',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                  SizedBox(height: 4),
+                  const Text(
+                    'Press Enter to pause the game',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+                // Pause button for mobile only (move above controls for visibility)
+                if (_isMobile)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: Icon(paused ? Icons.play_arrow : Icons.pause),
+                        label: Text(paused ? 'Resume' : 'Pause'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.yellow,
+                          foregroundColor: Colors.black,
+                          textStyle:
+                              const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            paused = !paused;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                // Play Again button (only when game over)
+                if (gameOver)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Play Again'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.tealAccent,
+                        foregroundColor: Colors.black,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () {
+                        // Refresh the page (web only)
+                        if (kIsWeb) {
+                          html.window.location.reload();
+                        } else {
+                          // For mobile/desktop, just restart the app state
+                          // (Optional: could use a callback or setState to reset)
+                          // For now, do nothing
+                        }
+                      },
+                    ),
+                  ),
+                if (victory)
+                  const Text(
+                    'You Win!\nRefresh to play again.',
+                    style: TextStyle(color: Colors.indigoAccent, fontSize: 16),
+                  ),
+                if (paused && !gameOver && !victory)
+                  const Text(
+                    'Paused',
+                    style: TextStyle(color: Colors.yellow, fontSize: 16),
+                  ),
+                const Spacer(),
+                const Text(
+                  'Made with Flutter',
+                  style: TextStyle(color: Colors.white24, fontSize: 12),
+                ),
+              ],
             ),
-          if (_isMobile)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: RetroDPad(
-                onDirection: (dir) {
-                  setState(() {
-                    _changeDirection(dir);
-                  });
-                },
-              ),
-            ),
+          ),
         ],
       ),
     );
