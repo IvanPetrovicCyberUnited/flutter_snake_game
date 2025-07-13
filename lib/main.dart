@@ -10,10 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show RawKeyDownEvent, LogicalKeyboardKey;
 
+import 'blinking_text.dart';
 import 'direction.dart';
 import 'dpad.dart';
 import 'snake_painter.dart';
-import 'blinking_text.dart';
 
 void main() {
   runApp(const CyberSnakeApp());
@@ -214,145 +214,6 @@ class _SnakeGamePageState extends State<SnakeGamePage>
     return Scaffold(
       body: Column(
         children: [
-          // Menu Row
-          Container(
-            color: Colors.grey[900],
-            constraints: BoxConstraints(minHeight: dpadSize),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left: Pause & Play Again
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isMobile)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: ElevatedButton.icon(
-                          icon: Icon(paused ? Icons.play_arrow : Icons.pause),
-                          label: Text(paused ? 'Resume' : 'Pause'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.yellow,
-                            foregroundColor: Colors.black,
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              paused = !paused;
-                            });
-                          },
-                        ),
-                      ),
-                    if (gameOver)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Play Again'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.tealAccent,
-                            foregroundColor: Colors.black,
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () {
-                            if (kIsWeb) {
-                              html.window.location.reload();
-                            } else {
-                              // For mobile/desktop, just restart the app state
-                            }
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-                // Center: Title, Score, Sound
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Cyber Snake',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.tealAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Score: $currentScore',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              soundOn ? Icons.volume_up : Icons.volume_off,
-                              color: Colors.tealAccent,
-                            ),
-                            tooltip: soundOn ? 'Mute' : 'Unmute',
-                            onPressed: () {
-                              setState(() {
-                                soundOn = !soundOn;
-                              });
-                            },
-                          ),
-                          Text(
-                            soundOn ? 'Sound On' : 'Muted',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                      if (victory)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'You Win!\nRefresh to play again.',
-                            style: TextStyle(
-                                color: Colors.indigoAccent, fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      if (paused && !gameOver && !victory)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'Paused',
-                            style:
-                                TextStyle(color: Colors.yellow, fontSize: 16),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                // Right: D-pad
-                if (_isMobile)
-                  SizedBox(
-                    width: dpadSize,
-                    height: dpadSize,
-                    child: RetroDPad(
-                      onDirection: (dir) {
-                        setState(() {
-                          _changeDirection(dir);
-                        });
-                      },
-                      size: dpadSize,
-                    ),
-                  ),
-              ],
-            ),
-          ),
           // Game Area
           Expanded(
             child: Container(
@@ -531,9 +392,147 @@ class _SnakeGamePageState extends State<SnakeGamePage>
               ),
             ),
           ),
+          // Menu Row (moved to bottom)
+          Container(
+            color: Colors.grey[900],
+            constraints: BoxConstraints(minHeight: dpadSize),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left: Pause & Play Again
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isMobile)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: ElevatedButton.icon(
+                          icon: Icon(paused ? Icons.play_arrow : Icons.pause),
+                          label: Text(paused ? 'Resume' : 'Pause'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow,
+                            foregroundColor: Colors.black,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              paused = !paused;
+                            });
+                          },
+                        ),
+                      ),
+                    if (gameOver)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Play Again'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.tealAccent,
+                            foregroundColor: Colors.black,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            if (kIsWeb) {
+                              html.window.location.reload();
+                            } else {
+                              // For mobile/desktop, just restart the app state
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+                // Center: Title, Score, Sound
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Cyber Snake',
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.tealAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Score: $currentScore',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              soundOn ? Icons.volume_up : Icons.volume_off,
+                              color: Colors.tealAccent,
+                            ),
+                            tooltip: soundOn ? 'Mute' : 'Unmute',
+                            onPressed: () {
+                              setState(() {
+                                soundOn = !soundOn;
+                              });
+                            },
+                          ),
+                          Text(
+                            soundOn ? 'Sound On' : 'Muted',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                      if (victory)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'You Win!\nRefresh to play again.',
+                            style: TextStyle(
+                                color: Colors.indigoAccent, fontSize: 16),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      if (paused && !gameOver && !victory)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Paused',
+                            style:
+                                TextStyle(color: Colors.yellow, fontSize: 16),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Right: D-pad
+                if (_isMobile)
+                  SizedBox(
+                    width: dpadSize,
+                    height: dpadSize,
+                    child: RetroDPad(
+                      onDirection: (dir) {
+                        setState(() {
+                          _changeDirection(dir);
+                        });
+                      },
+                      size: dpadSize,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
-
