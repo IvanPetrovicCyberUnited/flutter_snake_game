@@ -12,6 +12,8 @@ import 'package:flutter/services.dart' show RawKeyDownEvent, LogicalKeyboardKey;
 
 import 'direction.dart';
 import 'dpad.dart';
+import 'snake_painter.dart';
+import 'blinking_text.dart';
 
 void main() {
   runApp(const CyberSnakeApp());
@@ -399,11 +401,13 @@ class _SnakeGamePageState extends State<SnakeGamePage>
                     child: _isMobile
                         ? SizedBox.expand(
                             child: CustomPaint(
-                              painter: _SnakePainter(
+                              painter: SnakePainter(
                                 snake: snake,
                                 food: food,
                                 frog: frog,
                                 frogColor: frogColor,
+                                cols: cols,
+                                rows: rows,
                               ),
                             ),
                           )
@@ -427,11 +431,13 @@ class _SnakeGamePageState extends State<SnakeGamePage>
                             },
                             child: SizedBox.expand(
                               child: CustomPaint(
-                                painter: _SnakePainter(
+                                painter: SnakePainter(
                                   snake: snake,
                                   food: food,
                                   frog: frog,
                                   frogColor: frogColor,
+                                  cols: cols,
+                                  rows: rows,
                                 ),
                               ),
                             ),
@@ -473,7 +479,7 @@ class _SnakeGamePageState extends State<SnakeGamePage>
                       ),
                     ),
                   if (victory)
-                    const _BlinkingText(
+                    const BlinkingText(
                       text: 'YOU WIN!',
                       textStyle: TextStyle(
                         fontSize: 40,
@@ -531,98 +537,3 @@ class _SnakeGamePageState extends State<SnakeGamePage>
   }
 }
 
-class _SnakePainter extends CustomPainter {
-  final List<Point<int>> snake;
-  final Point<int> food;
-  final Point<int>? frog;
-  final Color frogColor;
-
-  _SnakePainter({
-    required this.snake,
-    required this.food,
-    required this.frog,
-    required this.frogColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cellWidth = size.width / _SnakeGamePageState.cols;
-    final cellHeight = size.height / _SnakeGamePageState.rows;
-    final paint = Paint()..color = Colors.greenAccent;
-
-    for (var point in snake) {
-      final rect = Rect.fromLTWH(
-        point.x * cellWidth,
-        point.y * cellHeight,
-        cellWidth,
-        cellHeight,
-      );
-      canvas.drawRect(rect.deflate(1), paint);
-    }
-
-    final foodRect = Rect.fromLTWH(
-      food.x * cellWidth,
-      food.y * cellHeight,
-      cellWidth,
-      cellHeight,
-    );
-    canvas.drawRect(foodRect.deflate(1), Paint()..color = Colors.redAccent);
-
-    if (frog != null) {
-      final frogRect = Rect.fromLTWH(
-        frog!.x * cellWidth,
-        frog!.y * cellHeight,
-        cellWidth,
-        cellHeight,
-      );
-      canvas.drawRect(frogRect.deflate(1), Paint()..color = frogColor);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-class _BlinkingText extends StatefulWidget {
-  final String text;
-  final TextStyle textStyle;
-
-  const _BlinkingText({
-    required this.text,
-    required this.textStyle,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  State<_BlinkingText> createState() => _BlinkingTextState();
-}
-
-class _BlinkingTextState extends State<_BlinkingText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _controller,
-      child: Center(
-        child: Text(widget.text, style: widget.textStyle),
-      ),
-    );
-  }
-}
