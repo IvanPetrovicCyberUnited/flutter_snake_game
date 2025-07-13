@@ -31,7 +31,6 @@ class RetroDPad extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double btnSize = size * 0.36;
-    final double sideBtnSize = size * 0.28;
     return SizedBox(
       width: size,
       height: size,
@@ -58,20 +57,20 @@ class RetroDPad extends StatelessWidget {
           // Left
           Positioned(
             left: 0,
-            top: (size - sideBtnSize) / 2,
-            width: sideBtnSize,
-            height: sideBtnSize,
+            top: (size - btnSize) / 2,
+            width: btnSize,
+            height: btnSize,
             child: _buildButton(Icons.keyboard_arrow_left, Direction.left,
-                width: sideBtnSize, height: sideBtnSize),
+                width: btnSize, height: btnSize),
           ),
           // Right
           Positioned(
             right: 0,
-            top: (size - sideBtnSize) / 2,
-            width: sideBtnSize,
-            height: sideBtnSize,
+            top: (size - btnSize) / 2,
+            width: btnSize,
+            height: btnSize,
             child: _buildButton(Icons.keyboard_arrow_right, Direction.right,
-                width: sideBtnSize, height: sideBtnSize),
+                width: btnSize, height: btnSize),
           ),
         ],
       ),
